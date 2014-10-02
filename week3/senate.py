@@ -24,7 +24,7 @@ for i in range(simulation_rounds):
 
 senate_wins = filter(lambda wins: wins >= 21, round_results)
 x = np.array(round_results)
-prob_win = 1 - norm(x.mean(), x.std()).cdf(19)
+prob_win = 1 - norm(x.mean(), x.std()).cdf(21)
 print prob_win
 
 plt.hist(round_results, bins=(np.amax(round_results) - np.amin(round_results)), normed=True)
