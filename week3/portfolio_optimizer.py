@@ -24,19 +24,20 @@ def simulate(start_date, end_date, symbols, allocations):
     na_price = close.values.copy()
 
     # Normalizing the prices to start at 1 and see relative returns
-    na_normalized_price = na_price / na_price[0, :]
-    na_rets = na_normalized_price.copy() * allocations
-    portfolio_rets = na_rets.sum(axis=1)
-    cum_rets = portfolio_rets[-1]
-    daily_rets = tsu.returnize0(portfolio_rets)
-    return daily_rets.std(), daily_rets.mean(), sqrt(252) * daily_rets.mean() / daily_rets.std(), cum_rets
+    normalized_price = (na_price / na_price[0, :]) * allocations
+    portfolio_rets_cumulative = (normalized_price.copy()).sum(axis=1)
+    daily_rets = tsu.returnize0(portfolio_rets_cumulative.copy())
+    return daily_rets.std(), \
+           daily_rets.mean(), \
+           sqrt(252) * daily_rets.mean() / daily_rets.std(), \
+           portfolio_rets_cumulative[-1]
 
 # symbols = ['AAPL', 'GLD', 'GOOG', 'XOM']
 # allocations = [0.4, 0.4, 0.0, 0.2]
 
 start_date = dt.datetime(2011, 1, 1)
 end_date = dt.datetime(2011, 12, 31)
-symbols = ['BRCM', 'TXN', 'AMD', 'ADI']
+symbols = ['AAPL', 'GLD', 'GOOG', 'XOM']
 
 # brute-force approach to optimize portfolio with respect to the highest Sharpe ratio
 best = (None, None, float('-inf'), None, [])
