@@ -8,8 +8,6 @@ possible_allocations = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
 
 def simulate(start_date, end_date, symbols, allocations):
-    global close
-
     # We need closing prices so the timestamp should be hours=16.
     dt_timeofday = dt.timedelta(hours=16)
 
@@ -36,9 +34,9 @@ def simulate(start_date, end_date, symbols, allocations):
 # symbols = ['AAPL', 'GLD', 'GOOG', 'XOM']
 # allocations = [0.4, 0.4, 0.0, 0.2]
 
-start_date = dt.datetime(2010, 1, 1)
-end_date = dt.datetime(2010, 12, 31)
-symbols = ['AXP', 'HPQ', 'IBM', 'HNZ']
+start_date = dt.datetime(2011, 1, 1)
+end_date = dt.datetime(2011, 12, 31)
+symbols = ['BRCM', 'TXN', 'AMD', 'ADI']
 
 # brute-force approach to optimize portfolio with respect to the highest Sharpe ratio
 best = (None, None, float('-inf'), None, [])
