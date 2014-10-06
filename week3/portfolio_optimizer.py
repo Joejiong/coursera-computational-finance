@@ -1,13 +1,15 @@
 import QSTK.qstkutil.qsdateutil as du
 import QSTK.qstkutil.tsutil as tsu
 import QSTK.qstkutil.DataAccess as da
-import matplotlib.pyplot as plt
 import datetime as dt
+from math import sqrt
 
 possible_allocations = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
 
 def simulate(start_date, end_date, symbols, allocations):
+    global close
+
     # We need closing prices so the timestamp should be hours=16.
     dt_timeofday = dt.timedelta(hours=16)
 
@@ -15,7 +17,7 @@ def simulate(start_date, end_date, symbols, allocations):
     ldt_timestamps = du.getNYSEdays(start_date, end_date, dt_timeofday)
 
     # Creating an object of the dataaccess class with Yahoo as the source.
-    dataobj = da.DataAccess('Yahoo', cachestalltime=0)
+    dataobj = da.DataAccess('Yahoo')
 
     # Reading the data, now data is a dictionary with the keys above.
     # Timestamps and symbols are the ones that were specified before.
@@ -25,27 +27,21 @@ def simulate(start_date, end_date, symbols, allocations):
 
     # Normalizing the prices to start at 1 and see relative returns
     na_normalized_price = na_price / na_price[0, :]
-    na_rets = na_normalized_price.copy()
-    tsu.returnize0(na_rets)
-    portfolio_rets = (na_rets*allocations).sum(axis=1)
+    na_rets = na_normalized_price.copy() * allocations
+    portfolio_rets = na_rets.sum(axis=1)
+    cum_rets = portfolio_rets[-1]
+    daily_rets = tsu.returnize0(portfolio_rets)
+    return daily_rets.std(), daily_rets.mean(), sqrt(252) * daily_rets.mean() / daily_rets.std(), cum_rets
 
-    # Plotting the prices with x-axis=timestamps
-    plt.clf()
-    plt.plot(ldt_timestamps, na_normalized_price)
-    plt.legend(symbols)
-    plt.ylabel('Normalized Close')
-    plt.xlabel('Date')
-    #plt.show()
-    return portfolio_rets.std(), portfolio_rets.mean(), 0.0, 1 + portfolio_rets[-1]
+# symbols = ['AAPL', 'GLD', 'GOOG', 'XOM']
+# allocations = [0.4, 0.4, 0.0, 0.2]
 
-
-start_date = dt.datetime(2011, 1, 1)
-end_date = dt.datetime(2011, 12, 31)
-symbols = ['AAPL', 'GLD', 'GOOG', 'XOM']
-allocations = [0.4, 0.4, 0.0, 0.2]
-vol, daily_ret, sharpe, cum_ret = simulate(start_date, end_date, symbols, allocations)
+start_date = dt.datetime(2010, 1, 1)
+end_date = dt.datetime(2010, 12, 31)
+symbols = ['AXP', 'HPQ', 'IBM', 'HNZ']
 
 # brute-force approach to optimize portfolio with respect to the highest Sharpe ratio
+best = (None, None, float('-inf'), None, [])
 for i in possible_allocations:
     for j in possible_allocations:
         for k in possible_allocations:
@@ -53,14 +49,17 @@ for i in possible_allocations:
                 if (i + j + k + l) != 1.0:
                     continue
                 else:
-                    print (i, j, k, l)
+                    print [i, j, k, l]
+                    vol, daily_ret, sharpe, cum_ret = simulate(start_date, end_date, symbols, [i, j, k, l])
+                    if best[2] < sharpe:
+                        best = (vol, daily_ret, sharpe, cum_ret, [i, j, k, l])
                     pass
 
 print 'Start Date: %s' % str(start_date)
 print 'End Date: %s' % str(end_date)
 print 'Symbols: %s' % str(symbols)
-print 'Optimal Allocations: %s' % str(allocations)
-print 'Sharpe Ratio: %.5f' % sharpe
-print 'Volatility (stdev of daily returns): %.5f' % vol
-print 'Average Daily Return: %.5f' % daily_ret
-print 'Cumulative Return: %.5f' % cum_ret
+print 'Optimal Allocations: %s' % str(best[4])
+print 'Sharpe Ratio: %.5f' % best[2]
+print 'Volatility (stdev of daily returns): %.5f' % best[0]
+print 'Average Daily Return: %.5f' % best[1]
+print 'Cumulative Return: %.5f' % best[3]
