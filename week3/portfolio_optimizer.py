@@ -32,9 +32,6 @@ def simulate(start_date, end_date, symbols, allocations):
            sqrt(252) * daily_rets.mean() / daily_rets.std(), \
            portfolio_rets_cumulative[-1]
 
-# symbols = ['AAPL', 'GLD', 'GOOG', 'XOM']
-# allocations = [0.4, 0.4, 0.0, 0.2]
-
 start_date = dt.datetime(2011, 1, 1)
 end_date = dt.datetime(2011, 12, 31)
 symbols = ['AAPL', 'GLD', 'GOOG', 'XOM']
@@ -48,7 +45,6 @@ for i in possible_allocations:
                 if (i + j + k + l) != 1.0:
                     continue
                 else:
-                    print [i, j, k, l]
                     vol, daily_ret, sharpe, cum_ret = simulate(start_date, end_date, symbols, [i, j, k, l])
                     if best[2] < sharpe:
                         best = (vol, daily_ret, sharpe, cum_ret, [i, j, k, l])
