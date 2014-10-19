@@ -43,9 +43,13 @@ for row in csv.reader(open(orders_csv, 'rU'), delimiter=','):
 df_holdings = copy.deepcopy(trade_matrix.cumsum())
 df_prices['_CASH'] = 1.0
 
-ts_total = DataFrame(df_prices*df_holdings).sum(axis=1)
-df_holdings['_VALUE'] = ts_total
-print df_holdings
+ts_fund_value = DataFrame(df_prices*df_holdings).sum(axis=1)
+df_holdings['_VALUE'] = ts_fund_value
+
+writer = csv.writer(open(values_csv, 'wb'), delimiter=',')
+for i in ts_fund_value.index:
+    row = [str(i.year), str(i.month), str(i.day), str(ts_fund_value[i])]
+    writer.writerow(row)
 
 
 
