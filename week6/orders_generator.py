@@ -19,17 +19,12 @@ def find_events(ls_symbols, d_data):
 
     print "Finding Events"
 
-    # Creating an empty dataframe
-    df_events = copy.deepcopy(df_close)
-    df_events = df_events * np.NAN
-
     # Time stamps for the event range
     ldt_timestamps = df_close.index
 
-
-    writer = csv.writer(open(orders_csv, 'wb'), delimiter=',')
-    for s_sym in ls_symbols:
-        for i in range(1, len(ldt_timestamps)):
+    events = []
+    for i in range(1, len(ldt_timestamps)):
+        for s_sym in ls_symbols:
             # Calculating the returns for this timestamp
             f_symprice_today = df_close[s_sym].ix[ldt_timestamps[i]]
             f_symprice_yest = df_close[s_sym].ix[ldt_timestamps[i - 1]]
@@ -41,11 +36,10 @@ def find_events(ls_symbols, d_data):
             # Event is found if the symbol is down more then 3% while the
             # market is up more then 2%
             if f_symprice_yest >= 5 and f_symprice_today < 5:
-                row = [str(i.year), str(i.month), str(i.day), str(ts_fund_value[i])]
-                df_events[s_sym].ix[ldt_timestamps[i]] = 1
-                writer.writerow(row)
+                item = (ldt_timestamps[i], s_sym)
+                events.append(item)
 
-    return df_events
+    return events
 
 
 dt_start = dt.datetime(2008, 1, 1)
@@ -65,5 +59,13 @@ for s_key in ls_keys:
     d_data[s_key] = d_data[s_key].fillna(method='bfill')
     d_data[s_key] = d_data[s_key].fillna(1.0)
 
-df_events = find_events(ls_symbols, d_data)
+events = find_events(ls_symbols, d_data)
+
+writer = csv.writer(open(orders_csv, 'wb'), delimiter=',')
+for (date, symbol) in events:
+    row_buy = [date.year, date.month, date.day, symbol, 'Buy', 100]
+    row_sell = [date.year, date.month, date.day, symbol, 'Sell', 100]
+    writer.writerow(row_buy)
+    writer.writerow(row_sell)
+
 
