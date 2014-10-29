@@ -36,7 +36,11 @@ def find_events(ls_symbols, d_data):
             # Event is found if the symbol is down more then 3% while the
             # market is up more then 2%
             if f_symprice_yest >= 5 and f_symprice_today < 5:
-                item = (ldt_timestamps[i], s_sym)
+                if len(ldt_timestamps) - i > 5:
+                    item = (ldt_timestamps[i], ldt_timestamps[i+5], s_sym)
+                else:
+                    item = (ldt_timestamps[i], ldt_timestamps[-1], s_sym)
+
                 events.append(item)
 
     return events
@@ -62,11 +66,9 @@ for s_key in ls_keys:
 events = find_events(ls_symbols, d_data)
 
 writer = csv.writer(open(orders_csv, 'wb'), delimiter=',')
-for (date, symbol) in events:
-    # need to address workdays
-    five_days_later = date + dt.timedelta(days=5)
-    row_buy = [date.year, date.month, date.day, symbol, 'Buy', 100]
-    row_sell = [five_days_later.year, five_days_later.month, five_days_later.day, symbol, 'Sell', 100]
+for (buy_date, sell_date, symbol) in events:
+    row_buy = [buy_date.year, buy_date.month, buy_date.day, symbol, 'Buy', 100]
+    row_sell = [sell_date.year, sell_date.month, sell_date.day, symbol, 'Sell', 100]
     writer.writerow(row_buy)
     writer.writerow(row_sell)
 
