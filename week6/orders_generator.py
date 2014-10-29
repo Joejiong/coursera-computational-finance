@@ -63,8 +63,10 @@ events = find_events(ls_symbols, d_data)
 
 writer = csv.writer(open(orders_csv, 'wb'), delimiter=',')
 for (date, symbol) in events:
+    # need to address workdays
+    five_days_later = date + dt.timedelta(days=5)
     row_buy = [date.year, date.month, date.day, symbol, 'Buy', 100]
-    row_sell = [date.year, date.month, date.day, symbol, 'Sell', 100]
+    row_sell = [five_days_later.year, five_days_later.month, five_days_later.day, symbol, 'Sell', 100]
     writer.writerow(row_buy)
     writer.writerow(row_sell)
 
