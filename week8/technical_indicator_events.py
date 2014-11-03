@@ -1,14 +1,14 @@
-import pandas as pd
 import numpy as np
-import math
 import copy
 import QSTK.qstkutil.qsdateutil as du
 import datetime as dt
 import QSTK.qstkutil.DataAccess as da
-import QSTK.qstkutil.tsutil as tsu
 import QSTK.qstkstudy.EventProfiler as ep
 import sys
+import csv
 from pandas import rolling_mean, rolling_std, DataFrame
+
+orders_csv = sys.argv[1]
 
 
 def compute_bollinger_bands(prices, look_back):
@@ -31,6 +31,7 @@ def find_events(bollinger_vals):
     # Time stamps for the event range
     ldt_timestamps = bollinger_vals.index
 
+    events = []
     for i in range(1, len(ldt_timestamps)):
         for symbol in bollinger_vals._series:
             # Calculating the returns for this timestamp
@@ -39,8 +40,13 @@ def find_events(bollinger_vals):
             bollinger_market_today = ts_market.ix[ldt_timestamps[i]]
 
             if bollinger_equity_today <= -2 and bollinger_equity_yesterday >= -2 and bollinger_market_today >= 1:
+                if len(ldt_timestamps) - i > 5:
+                    item = (ldt_timestamps[i], ldt_timestamps[i + 5], symbol)
+                else:
+                    item = (ldt_timestamps[i], ldt_timestamps[-1], symbol)
+                events.append(item)
                 df_events[symbol].ix[ldt_timestamps[i]] = 1
-    return df_events
+    return df_events, events
 
 
 dt_start = dt.datetime(2008, 1, 1)
@@ -51,16 +57,25 @@ dataobj = da.DataAccess('Yahoo')
 symbols = dataobj.get_symbols_from_list('sp5002012')
 symbols.append('SPY')
 
-stock_prices = dataobj.get_data(ldt_timestamps, symbols, 'close')
-stock_prices = stock_prices.fillna(method='ffill')
-stock_prices = stock_prices.fillna(method='bfill')
-stock_prices = stock_prices.fillna(1.0)
+keys = ['open', 'high', 'low', 'close', 'volume', 'actual_close']
+ldf_data = dataobj.get_data(ldt_timestamps, symbols, keys)
+d_data = dict(zip(keys, ldf_data))
 
-bollinger_vals = compute_bollinger_bands(stock_prices, 20)
-print bollinger_vals
-events = find_events(bollinger_vals)
-print events
+for s_key in keys:
+    d_data[s_key] = d_data[s_key].fillna(method='ffill')
+    d_data[s_key] = d_data[s_key].fillna(method='bfill')
+    d_data[s_key] = d_data[s_key].fillna(1.0)
+
+bollinger_vals = compute_bollinger_bands(d_data['close'], 20)
+df_events, events = find_events(bollinger_vals)
 print "Creating Study"
-ep.eventprofiler(events, stock_prices, i_lookback=20, i_lookforward=20,
+ep.eventprofiler(df_events, d_data, i_lookback=20, i_lookforward=20,
                  s_filename='MyEventStudy.pdf', b_market_neutral=True, b_errorbars=True,
                  s_market_sym='SPY')
+
+writer = csv.writer(open(orders_csv, 'wb'), delimiter=',')
+for (buy_date, sell_date, symbol) in events:
+    row_buy = [buy_date.year, buy_date.month, buy_date.day, symbol, 'Buy', 100]
+    row_sell = [sell_date.year, sell_date.month, sell_date.day, symbol, 'Sell', 100]
+    writer.writerow(row_buy)
+    writer.writerow(row_sell)
